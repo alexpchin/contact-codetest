@@ -33,23 +33,14 @@ class CronParser
 
   def to_s 
     unless @error 
-      """
-      minute: #{minute}
-      hour: #{hour}
-      day of month: #{day_of_month}
-      month: #{month}
-      day of week: #{day_of_week}
-      command: #{command}
-      
-      CORRECT:
-
-      minute: 0 20 40
-      hour: 1 2 3
-      day of month: 10 11
-      month: 1 2 3 4 5 6 7 8 9 10 11 12
-      day of week: 1 2 3 4 5 6 7
-      command: echo hello
-      """
+"""
+minute: #{minute}
+hour: #{hour}
+day of month: #{day_of_month}
+month: #{month}
+day of week: #{day_of_week}
+command: #{command}
+"""
     else 
       @error 
     end
@@ -168,5 +159,3 @@ class CronParser
     end
 
 end
-
-puts CronParser.new(ARGV)

@@ -13,12 +13,20 @@ command: echo hello
 
 Your program will be executed with the cron string given as a single argument, e.g.:
 
-```
+```sh
 $ ./your-program "*/20 1-3 10,11 * * echo hello"
 ```
 
 ### Solution
 
+```sh
+$ ruby ./run.rb "*/20 1-3 10,11 * * echo hello" 
 ```
-$ ruby ./cron-parser.rb "*/20 1-3 10,11 * * echo hello" 
+
+### Tests
+
+Run tests with:
+
+```sh
+$ rspec
 ```
