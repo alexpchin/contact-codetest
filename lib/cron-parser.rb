@@ -17,15 +17,11 @@ class CronParser
   attr_accessor :minute, :hour, :day_of_month, :month, :day_of_week, :command
   attr_accessor :source, :error
 
-  def initialize arg
+  def initialize arg = []
     begin
-      # Handle non-standard commands
+      raise ArgumentError, 'no argument provided' if !arg[0]
       @source = handle_non_standard(arg[0])
-      
-      # Validate
       validate_source
-
-      # Parse
       parse
     rescue => e
       @error = "An error of type #{e.class} happened, message is: '#{e.message.capitalize}'"
@@ -73,18 +69,17 @@ command: #{command}
       end
     end
 
-    def parse 
+    # ┌───────────── minute (0 - 59)
+    # │ ┌───────────── hour (0 - 23)
+    # │ │ ┌───────────── day of the month (1 - 31)
+    # │ │ │ ┌───────────── month (1 - 12)
+    # │ │ │ │ ┌───────────── day of the week (0 - 6) (Sunday to Saturday;
+    # │ │ │ │ │                                   7 is also Sunday on some systems)
+    # │ │ │ │ │
+    # │ │ │ │ │
+    # * * * * * <command to execute>
+    def parse
       source_parts = source.split
-
-      # ┌───────────── minute (0 - 59)
-      # │ ┌───────────── hour (0 - 23)
-      # │ │ ┌───────────── day of the month (1 - 31)
-      # │ │ │ ┌───────────── month (1 - 12)
-      # │ │ │ │ ┌───────────── day of the week (0 - 6) (Sunday to Saturday;
-      # │ │ │ │ │                                   7 is also Sunday on some systems)
-      # │ │ │ │ │
-      # │ │ │ │ │
-      # * * * * * <command to execute>
       self.minute = parse_part(source_parts[0], :minute)
       self.hour = parse_part(source_parts[1], :hour)
       self.day_of_month = parse_part(source_parts[2], :day_of_month)

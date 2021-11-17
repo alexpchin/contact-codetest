@@ -30,6 +30,14 @@ command: echo hello
     end
   end
 
+  # Further tests
+  describe "no argument provided" do
+    it "returns an error if no argument is provided" do
+      parser = CronParser.new()
+      expect(parser.to_s).to eq ("An error of type ArgumentError happened, message is: 'No argument provided'")
+    end
+  end
+
   describe "every minute" do
     it "returns correct every minute" do
       parser = CronParser.new(['* * * * * echo every minute'])
@@ -56,6 +64,21 @@ day of month: 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 
 month: 1 2 3 4 5 6 7 8 9 10 11 12
 day of week: 6 7
 command: echo every weekend
+""")
+    end
+  end
+
+  describe "every friday at 11pm" do
+    it "returns correct every weekend" do
+      parser = CronParser.new(['0 23 * * 5 echo every friday at 11pm'])
+      expect(parser.to_s).to eq (
+"""
+minute: 0
+hour: 23
+day of month: 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
+month: 1 2 3 4 5 6 7 8 9 10 11 12
+day of week: 5
+command: echo every friday at 11pm
 """)
     end
   end
