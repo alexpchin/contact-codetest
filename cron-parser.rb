@@ -6,20 +6,15 @@ class CronParser
   def initialize arg
     @source = arg[0]
 
-    # Hardcoding
-    @minute = "0 20 40"
-    @hour = "1 2 3"
-    @day_of_month = "10 11"
-    @month = "1 2 3 4 5 6 7 8 9 10 11 12"
-    @day_of_week = "1 2 3 4 5 6 7"
-    @command = "echo hello"
-
     # Validate
     begin
     validate_source
     rescue => e
       @error = "An error of type #{e.class} happened, message is: '#{e.message.capitalize}'"
     end
+
+    # Parse
+    parse
   end
 
   def to_s 
@@ -31,7 +26,6 @@ class CronParser
       month: #{month}
       day of week: #{day_of_week}
       command: #{command}
-      initial: #{source}
       """
     else 
       @error 
@@ -39,6 +33,25 @@ class CronParser
   end
 
   private 
+    def parse 
+      source_parts = source.split
+
+      # ┌───────────── minute (0 - 59)
+      # │ ┌───────────── hour (0 - 23)
+      # │ │ ┌───────────── day of the month (1 - 31)
+      # │ │ │ ┌───────────── month (1 - 12)
+      # │ │ │ │ ┌───────────── day of the week (0 - 6) (Sunday to Saturday;
+      # │ │ │ │ │                                   7 is also Sunday on some systems)
+      # │ │ │ │ │
+      # │ │ │ │ │
+      # * * * * * <command to execute>
+      self.minute = source_parts[0]
+      self.hour = source_parts[1]
+      self.day_of_month = source_parts[2]
+      self.month = source_parts[3]
+      self.day_of_week = source_parts[4]
+      self.command = source_parts[5..-1].join(' ')
+    end 
 
     def validate_source
       is_str?
