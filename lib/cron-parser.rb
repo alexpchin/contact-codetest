@@ -18,14 +18,15 @@ class CronParser
   attr_accessor :source, :error
 
   def initialize arg
-    @source = arg[0]
-
     begin
-       # Validate
-        validate_source
+      # Handle non-standard commands
+      @source = handle_non_standard(arg[0])
+      
+      # Validate
+      validate_source
 
-        # Parse
-        parse
+      # Parse
+      parse
     rescue => e
       @error = "An error of type #{e.class} happened, message is: '#{e.message.capitalize}'"
     end
@@ -46,7 +47,31 @@ command: #{command}
     end
   end
 
-  private 
+  private
+
+    # Handle non-standard scheduling definitions
+    def handle_non_standard source
+      unless source.scan(/@yearly|@annually|@monthly|@weekly|@daily|@midnight|@hourly/).length > 1
+        case source[/@yearly|@annually|@monthly|@weekly|@daily|@midnight|@hourly/]
+        when '@reboot'
+          raise ArgumentError, "can't output @reboot"
+        when '@yearly', '@annually'
+          "0 0 1 1 * #{source.partition(' ').last}"
+        when '@monthly'
+          "0 0 1 * * #{source.partition(' ').last}"
+        when '@weekly'
+          "0 0 * * 0 #{source.partition(' ').last}"
+        when '@daily', '@midnight'
+          "0 0 * * * #{source.partition(' ').last}"
+        when '@hourly'
+          "0 * * * * #{source.partition(' ').last}"
+        else
+          source
+        end
+      else 
+        raise ArgumentError, 'too many non-standard defintions included'
+      end
+    end
 
     def parse 
       source_parts = source.split
@@ -60,11 +85,11 @@ command: #{command}
       # │ │ │ │ │
       # │ │ │ │ │
       # * * * * * <command to execute>
-      self.minute = parse_part(source_parts[0], :minute).join(' ')
-      self.hour = parse_part(source_parts[1], :hour).join(' ')
-      self.day_of_month = parse_part(source_parts[2], :day_of_month).join(' ')
-      self.month = parse_part(source_parts[3], :month).join(' ')
-      self.day_of_week = parse_part(source_parts[4], :day_of_week).join(' ')
+      self.minute = parse_part(source_parts[0], :minute)
+      self.hour = parse_part(source_parts[1], :hour)
+      self.day_of_month = parse_part(source_parts[2], :day_of_month)
+      self.month = parse_part(source_parts[3], :month)
+      self.day_of_week = parse_part(source_parts[4], :day_of_week)
       self.command = source_parts[5..-1].join(' ')
     end
 
@@ -77,24 +102,24 @@ command: #{command}
     end
 
     def print_wildcard time_denomination
-      TIMES.fetch(time_denomination)
+      TIMES.fetch(time_denomination).join(' ')
     end 
 
     def print_range part, time_denomination
       range = part.split(RANGE_IDENTIFIER)
       start = range[0].to_i
       finish = range[1].to_i
-      TIMES.fetch(time_denomination)[start..finish]
+      TIMES.fetch(time_denomination)[start..finish].join(' ')
     end
 
     def print_step part, time_denomination
       step = part.partition(STEP_IDENTIFIER).last.to_i
-      TIMES.fetch(time_denomination).each_slice(step).map(&:first)
+      TIMES.fetch(time_denomination).each_slice(step).map(&:first).join(' ')
     end 
 
     def print_single part, time_denomination
       unless TIMES.fetch(time_denomination).include? part.to_i
-        raise ArgumentError, 'incorrect single value'
+        raise ArgumentError, 'incorrect value for time denomination'
       else  
         part
       end 
@@ -104,7 +129,7 @@ command: #{command}
       combinations = part.split(COMBINATION_IDENTIFIER)
       combinations.map do |combination|
         parse_part(combination, time_denomination)
-      end.sort
+      end.sort.join(' ')
     end 
 
     # - a wildcard `*` which equates to all valid values.
