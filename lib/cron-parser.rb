@@ -12,7 +12,32 @@ class CronParser
     day_of_month: (1..31).map.to_a,
     month: (1..12).map.to_a,
     day_of_week: (1..7).map.to_a, # Example uses 1 - 7 
-  } 
+  }
+
+  MONTHS = {
+    "jan" => "1",
+    "feb" => "2",
+    "mar" => "3",
+    "apr" => "4",
+    "may" => "5",
+    "jun" => "6",
+    "jul" => "7",
+    "aug" => "8",
+    "sep" => "9",
+    "oct" => "10",
+    "nov" => "11",
+    "dec" => "12",
+    "sun" => "0",
+  }
+
+  DAYS = {
+    "mon" => "1",
+    "tue" => "2",
+    "wed" => "3",
+    "thu" => "4",
+    "fri" => "5",
+    "sat" => "6"
+ }
 
   attr_accessor :minute, :hour, :day_of_month, :month, :day_of_week, :command
   attr_accessor :source, :error
@@ -21,6 +46,7 @@ class CronParser
     begin
       raise ArgumentError, 'no argument provided' if !arg[0]
       @source = handle_non_standard(arg[0])
+      translate_words
       validate_source
       parse
     rescue => e
@@ -66,6 +92,46 @@ command: #{command}
         end
       else 
         raise ArgumentError, 'too many non-standard defintions included'
+      end
+    end
+
+    # Handle words in cronline and convert to numbers
+    def translate_words
+      [DAYS, MONTHS].each { |hash| translate(hash) }
+    end
+
+    # NOTE: Don't replace if day or month value is included in command
+    def translate dictionary
+      word_in_wrong_place?
+
+      temp_source = source.clone
+      temp_arr = temp_source.split(' ')
+      everything_but_command = temp_arr[0..4].join(' ')
+      command = temp_source.gsub!(everything_but_command, '')
+      dictionary.each do |k, v|
+        everything_but_command.gsub!(k, v)
+      end
+      self.source = everything_but_command + command
+    end
+
+    # Validate if words have been used in the wrong place
+    def word_in_wrong_place?
+      temp_arr = source.split(' ')[0..5] 
+      
+      MONTHS.keys.each do |month|
+        temp_arr.each_with_index do |item, index|
+          if item.include?(month) && index != 3
+            raise ArgumentError, 'incorrect position for month string'
+          end 
+        end 
+      end
+
+      DAYS.keys.each do |day|
+        temp_arr.each_with_index do |item, index|
+          if item.include?(day) && index != 4
+            raise ArgumentError, 'incorrect position for day string'
+          end
+        end
       end
     end
 
@@ -152,6 +218,7 @@ command: #{command}
       part.include? COMBINATION_IDENTIFIER
     end
 
+    # Run all validation functions
     def validate_source
       is_str?
       able_to_split?
