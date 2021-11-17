@@ -38,6 +38,20 @@ command: echo hello
     end
   end
 
+  describe "incorrect symbol used in cronline" do
+    it "returns an error" do
+      parser = CronParser.new(['0 9 & * * echo hello'])
+      expect(parser.to_s).to eq("An error of type ArgumentError happened, message is: 'Something went wrong'")
+    end
+  end
+
+  describe "too many spaces used in cronline" do
+    it "returns an error" do
+      parser = CronParser.new(['0      9 * * * echo hello'])
+      expect(parser.to_s).to eq("An error of type ArgumentError happened, message is: 'Something went wrong'")
+    end
+  end
+
   describe "every minute" do
     it "returns correct every minute" do
       parser = CronParser.new(['* * * * * echo every minute'])

@@ -47,14 +47,15 @@ class CronParser
       raise ArgumentError, 'no argument provided' if !arg[0]
       @source = handle_non_standard(arg[0])
       translate_words
-      validate_source
+      pre_validate
       parse
+      post_validate
     rescue => e
       @error = "An error of type #{e.class} happened, message is: '#{e.message.capitalize}'"
     end
   end
 
-  def to_s 
+  def to_s
     unless @error 
 """
 minute: #{minute}
@@ -106,12 +107,12 @@ command: #{command}
 
       temp_source = source.clone
       temp_arr = temp_source.split(' ')
-      everything_but_command = temp_arr[0..4].join(' ')
+      everything_but_command = temp_arr[0..4]&.join(' ')
       command = temp_source.gsub!(everything_but_command, '')
       dictionary.each do |k, v|
         everything_but_command.gsub!(k, v)
       end
-      self.source = everything_but_command + command
+      self.source = "#{everything_but_command} #{command}"
     end
 
     # Validate if words have been used in the wrong place
@@ -151,7 +152,7 @@ command: #{command}
       self.day_of_month = parse_part(source_parts[2], :day_of_month)
       self.month = parse_part(source_parts[3], :month)
       self.day_of_week = parse_part(source_parts[4], :day_of_week)
-      self.command = source_parts[5..-1].join(' ')
+      self.command = source_parts[5..-1]&.join(' ')
     end
 
     def parse_part part, time_denomination
@@ -163,19 +164,19 @@ command: #{command}
     end
 
     def print_wildcard time_denomination
-      TIMES.fetch(time_denomination).join(' ')
+      TIMES.fetch(time_denomination)&.join(' ')
     end 
 
     def print_range part, time_denomination
       range = part.split(RANGE_IDENTIFIER)
       start = range[0].to_i
       finish = range[1].to_i
-      TIMES.fetch(time_denomination)[start..finish].join(' ')
+      TIMES.fetch(time_denomination)[start..finish]&.join(' ')
     end
 
     def print_step part, time_denomination
       step = part.partition(STEP_IDENTIFIER).last.to_i
-      TIMES.fetch(time_denomination).each_slice(step).map(&:first).join(' ')
+      TIMES.fetch(time_denomination).each_slice(step).map(&:first)&.join(' ')
     end 
 
     def print_single part, time_denomination
@@ -219,7 +220,7 @@ command: #{command}
     end
 
     # Run all validation functions
-    def validate_source
+    def pre_validate
       is_str?
       able_to_split?
       correct_length?
@@ -237,11 +238,19 @@ command: #{command}
       end
     end
 
+    # Command may have spaces inside, so maybe greater than 6 when split
     def correct_length?
       source_length = @source.split(/\s+/).length
-      # Command may have spaces inside, so maybe greater than 6 when split
       unless source_length >= MIN_SOURCE_LENGTH
         raise ArgumentError, 'not a valid cronline length'
+      end
+    end
+
+    def post_validate
+      [minute, hour, day_of_month, month, day_of_week, command].each do |output|
+        if !output || output.nil? || output.empty?
+          raise ArgumentError, 'something went wrong'
+        end
       end
     end
 
