@@ -17,3 +17,7 @@ Each field can be a combination of the following values:
 - a step `*/2` which equates to every second value starting at 0, or 1 for day of month and month.
 - a single value 2 which would be 2.
 - a combination of the above separated by a `,`
+
+### Step-by-step
+
+Initially create a ruby file that takes an argument and outputs hardcoded result. 
